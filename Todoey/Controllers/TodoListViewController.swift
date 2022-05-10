@@ -8,6 +8,7 @@
 import UIKit
 //import CoreData
 import RealmSwift
+import ChameleonFramework
 
 class TodoListViewController: SwipeTableViewController {
     
@@ -17,7 +18,8 @@ class TodoListViewController: SwipeTableViewController {
 
     let realm = try! Realm()
     var toDoItems: Results<Item>?
-//    let dataFilePath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?.appendingPathComponent("Items.plist")
+    @IBOutlet weak var searchBar: UISearchBar!
+    //    let dataFilePath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?.appendingPathComponent("Items.plist")
 //    when you use it you have to retrieve the entire list or load the entire list into memory before you can use any of the items or objects contained within the list.So again it's memory intensive to load up an entire table when you only want one or two items inside
     
     var selectedCategory: Category? {
@@ -34,8 +36,28 @@ class TodoListViewController: SwipeTableViewController {
 //        if let items = defaults.array(forKey: "ToDoListArray") as? [String] {
 //            itemArray = items
 //        }
-        print(FileManager.default.urls(for: .documentDirectory, in: .userDomainMask))        
-        loadItems()
+        print(FileManager.default.urls(for: .documentDirectory, in: .userDomainMask))
+//        if let colourHex = selectedCategory?.colour {
+//        navigationController?.navigationBar.barTintColor = UIColor(hexString: colourHex)
+        
+//        loadItems()
+    }
+    
+    
+    override func viewWillAppear(_ animated: Bool) {
+        
+        if let colourHex = selectedCategory?.colour {
+            title = selectedCategory?.name
+            guard let navBar = navigationController?.navigationBar else {fatalError("Navigation controller doesnt exist")}
+            
+            if let navBarColour = UIColor(hexString: colourHex) {
+                navBar.barTintColor = navBarColour
+                navBar.tintColor = ContrastColorOf(navBarColour, returnFlat: true)
+                navBar.largeTitleTextAttributes = [NSAttributedString.Key.foregroundColor: ContrastColorOf(navBarColour, returnFlat: true)]
+                searchBar.barTintColor = navBarColour
+//                print(colourHex)
+            }
+        }
     }
     
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
@@ -45,9 +67,15 @@ class TodoListViewController: SwipeTableViewController {
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
 //        Asks the data source for a cell to insert in a particular location of the table view.
         let cell = super.tableView(tableView, cellForRowAt: indexPath)
+        
 //        let cell = tableView.dequeueReusableCell(withIdentifier: "ToDoItemCell", for: indexPath)
         if let item = toDoItems?[indexPath.row] {
             cell.textLabel?.text = item.title
+            if let colour = UIColor(hexString: selectedCategory!.colour)?.darken(byPercentage: (CGFloat(indexPath.row)/CGFloat(toDoItems!.count))) {
+                cell.backgroundColor = colour
+                cell.textLabel?.textColor = ContrastColorOf(colour, returnFlat: true)
+            }
+            
             cell.accessoryType = item.done ? .checkmark : .none
         } else {
             cell.textLabel?.text = "No items added"
